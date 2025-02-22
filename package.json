@@ -1,7 +1,7 @@
 {
-  "name": "adl-note",
-  "displayName": "adl-note",
-  "description": "",
+  "name": "cool-code-note",
+  "displayName": "cool-code-note",
+  "description": "Cool Code Note is a Visual Studio Code extension that allows you to add code comments to your code.",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.97.0"
@@ -14,8 +14,49 @@
   "contributes": {
     "commands": [
       {
-        "command": "adl-note.helloWorld",
-        "title": "Hello World"
+        "command": "extension.addComment",
+        "title": "💬 Add Code Comment"
+      },
+      {
+        "command": "extension.navigateToComment",
+        "title": "💬 Go to Code Comment"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "extension.addComment",
+        "key": "ctrl+alt+c",
+        "when": "editorTextFocus"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "commentView",
+          "title": "Code Note",
+          "icon": "media/comment-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "commentView": [
+        {
+          "type": "webview",
+          "id": "commentSidebar",
+          "name": "Comments"
+        }
+      ]
+    },
+    "languages": [
+      {
+        "id": "plaintext",
+        "extensions": [
+          ".txt"
+        ],
+        "aliases": [
+          "Plain Text",
+          "plaintext"
+        ]
       }
     ]
   },
@@ -28,14 +69,19 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.97.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
+    "@types/uuid": "^10.0.0",
+    "@types/vscode": "^1.97.0",
     "@typescript-eslint/eslint-plugin": "^8.22.0",
     "@typescript-eslint/parser": "^8.22.0",
-    "eslint": "^9.19.0",
-    "typescript": "^5.7.3",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1"
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^9.19.0",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "simple-git": "^3.27.0",
+    "uuid": "^11.1.0"
   }
 }

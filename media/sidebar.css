@@ -1,0 +1,203 @@
+/* media/sidebar.css */
+
+/* 基于 VSCode 主题变量设置背景和文本颜色 */
+body {
+  font-family: Arial, sans-serif;
+  padding: 10px;
+  background-color: var(--vscode-editor-background);
+  color: var(--vscode-editor-foreground);
+  overflow-y: auto;
+  height: 100%;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 10px;
+  color: var(--vscode-titleBar-activeForeground);
+}
+
+.comment {
+  border: 1px solid var(--vscode-dropdown-border);
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 15px;
+  background-color: var(--vscode-editor-background);
+  box-shadow: var(--vscode-editorWidget-shadow);
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+.comment.highlight {
+  background-color: rgba(0, 120, 215, 0.3); /* 蓝色半透明背景 */
+  border-color: var(--vscode-button-hoverBackground);
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  color: var(--vscode-editorLineNumber-foreground);
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  background-color: var(--vscode-editorWidget-background);
+  color: var(--vscode-editor-foreground);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.header-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.comment-lines {
+  font-size: 0.9em;
+  color: var(--vscode-editor-foreground);
+}
+
+.comment-timestamp {
+  font-size: 0.8em;
+  color: var(--vscode-editor-foreground);
+}
+
+.comment-content {
+  margin-bottom: 10px;
+  white-space: pre-wrap; /* 保留换行和空格 */
+  text-align: left; /* 强制左对齐 */
+  line-height: 1.5;
+}
+
+.action-section {
+  margin-bottom: 10px;
+}
+
+.action-section .toggle-replies {
+  background: none;
+  border: none;
+  color: var(--vscode-button-foreground);
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.9em;
+  transition: color 0.3s;
+}
+
+.action-section .toggle-replies:hover {
+  text-decoration: underline;
+  color: var(--vscode-button-hoverForeground);
+}
+
+.reply-section {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 10px;
+}
+
+.reply-section textarea {
+  resize: vertical;
+  padding: 8px;
+  border: 1px solid var(--vscode-editorWidget-border); /* 使用中性色彩边框 */
+  border-radius: 4px;
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-editor-foreground);
+  text-align: left; /* 确保文本左对齐 */
+  overflow: auto;
+  font-family: inherit;
+  font-size: 0.9em;
+}
+
+.reply-section textarea:focus {
+  border-color: var(--vscode-editorWidget-border);
+  outline: none;
+}
+
+.reply-section .submit-reply-button {
+  align-self: flex-end;
+  margin-top: 5px;
+  background-color: var(
+    --vscode-button-background
+  ); /* 使用 VSCode 按钮背景色 */
+  color: var(--vscode-button-foreground); /* 使用 VSCode 按钮前景色 */
+  border: none;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s, color 0.3s;
+  font-size: 0.9em;
+}
+
+.reply-section .submit-reply-button:hover {
+  background-color: var(
+    --vscode-button-hoverBackground
+  ); /* 使用 hover 背景色 */
+  color: var(--vscode-button-hoverForeground); /* 使用 hover 前景色 */
+}
+
+.replies {
+  margin-top: 10px;
+  padding-left: 10px;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+}
+
+.replies[data-parent-id] {
+  display: none; /* 确保回复在加载时是隐藏的 */
+}
+
+.replies.show {
+  display: block;
+}
+
+.reply {
+  display: flex;
+  align-items: flex-start;
+  background-color: var(--vscode-editorWidget-background);
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  box-shadow: var(--vscode-editorWidget-shadow);
+}
+
+.reply-info {
+  margin-left: 8px;
+  flex-grow: 1;
+}
+
+.reply-info p {
+  margin: 5px 0 0 0;
+  white-space: pre-wrap; /* 保留换行和空格 */
+  line-height: 1.4;
+}
+
+.reply-info strong {
+  display: inline-block;
+}
+
+.reply .avatar {
+  width: 28px;
+  height: 28px;
+  background-color: var(--vscode-editorWidget-background);
+  color: var(--vscode-editor-foreground);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.no-replies {
+  font-style: italic;
+  color: var(--vscode-editor-foreground);
+}
+
+/* 自适应滚动 */
+#comments {
+  max-height: 100%;
+  overflow-y: auto;
+}
