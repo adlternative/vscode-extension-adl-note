@@ -26,7 +26,9 @@ export class CommentService {
     endLine: number,
     content: string,
     author: string,
-    parentCommentId?: string
+    parentCommentId?: string,
+    blobHash?: string,
+    commitHash?: string
   ): Comment {
     const comments = this.getComments(fileUri);
     const newComment: Comment = {
@@ -36,6 +38,8 @@ export class CommentService {
       endLine,
       content,
       author,
+      blobHash: blobHash || null,
+      commitHash: commitHash || null,
       timestamp: Date.now(),
       parentCommentId: parentCommentId || null,
     };
@@ -68,7 +72,9 @@ export class CommentService {
       endLine,
       content,
       author,
-      parentCommentId
+      parentCommentId,
+      undefined,
+      undefined
     );
   }
 

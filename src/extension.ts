@@ -44,8 +44,8 @@ export function activate(context: vscode.ExtensionContext) {
         selectedRange = new vscode.Range(selection.start, selection.end);
       }
 
-      const startLine = selectedRange.start.line + 1; // 行号从1开始
-      const endLine = selectedRange.end.line + 1;
+      let startLine = selectedRange.start.line + 1; // 行号从1开始
+      let endLine = selectedRange.end.line + 1;
       const fileUri = editor.document.uri;
       const filePath = fileUri.fsPath;
 
@@ -85,6 +85,7 @@ export function activate(context: vscode.ExtensionContext) {
         if (
           status.not_added.includes(relativePath) ||
           status.created.includes(relativePath) ||
+          status.ignored?.includes(relativePath) ||
           status.deleted.includes(relativePath)
         ) {
           vscode.window.showErrorMessage(
@@ -92,6 +93,10 @@ export function activate(context: vscode.ExtensionContext) {
           );
           return;
         }
+        // 获取当前 git commit hash
+        const commitHash = await git.revparse(["HEAD"]);
+        // 获取当前 git blob hash
+        const blobHash = await git.revparse([`HEAD:${relativePath}`]);
 
         // 如果文件有改动，进行进一步检查
         if (
@@ -107,18 +112,24 @@ export function activate(context: vscode.ExtensionContext) {
           ]);
 
           // 使用 parse-diff 解析差异
-          const files = parseDiff(diffOutput);
+          const diffFiles = parseDiff(diffOutput);
           let modifiedRanges: Array<{ start: number; end: number }> = [];
 
-          for (const file of files) {
-            for (const hunk of file.chunks) {
-              // hunk newStart 和 newLines 表示修改后的文件中的行数
-              const hunkStart = hunk.newStart;
-              const hunkLines = hunk.newLines;
-              const rangeStart = hunkStart;
-              const rangeEnd = hunkStart + hunkLines - 1;
-              modifiedRanges.push({ start: rangeStart, end: rangeEnd });
-            }
+          if (diffFiles.length > 1) {
+            vscode.window.showErrorMessage(
+              "Cannot add comment because the file has multiple changes."
+            );
+            return;
+          }
+          const diffFile = diffFiles[0];
+
+          for (const hunk of diffFile.chunks) {
+            // hunk newStart 和 newLines 表示修改后的文件中的行数
+            const hunkStart = hunk.newStart;
+            const hunkLines = hunk.newLines;
+            const rangeStart = hunkStart;
+            const rangeEnd = hunkStart + hunkLines - 1;
+            modifiedRanges.push({ start: rangeStart, end: rangeEnd });
           }
 
           // 检查评论范围是否与修改范围有重叠
@@ -134,10 +145,20 @@ export function activate(context: vscode.ExtensionContext) {
             );
             return;
           }
-        }
 
-        // 获取当前 git blob hash（可选，如果后续需要使用）
-        const blobHash = await git.revparse([`HEAD:${relativePath}`]);
+          // 找出所有在 comment startLine 之前的修改行，计算评论向下偏移
+          const offset = diffFile.chunks
+            .filter((chunk) => chunk.newStart + chunk.newLines - 1 < startLine)
+            .reduce(
+              (acc, chunk) =>
+                acc +
+                (chunk.newLines) -
+                (chunk.oldLines),
+              0
+            );
+          startLine -= offset;
+          endLine -= offset;
+        }
 
         // 添加评论
         commentService.addComment(
@@ -145,7 +166,10 @@ export function activate(context: vscode.ExtensionContext) {
           startLine,
           endLine,
           commentContent,
-          "MockUser"
+          "MockUser",
+          undefined,
+          blobHash,
+          commitHash,
         );
         vscode.window.showInformationMessage("The comment has been added");
 

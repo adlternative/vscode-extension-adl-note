@@ -8,7 +8,9 @@ export interface Comment {
   author: string; // Mock 值
   timestamp: number;
   parentCommentId: string | null;
-  // blobHash: string; // Git blob 快照
+
+  commitHash: string | null; // Git commit 哈希
+  blobHash: string | null; // Git blob 哈希
 }
 
 export interface CommentNode extends Comment {
