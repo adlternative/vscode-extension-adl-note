@@ -5,6 +5,7 @@ import { CommentCodeLensProvider } from "./providers/commentCodeLensProvider";
 import { CommentSidebarProvider } from "./providers/commentSidebarProvider";
 import simpleGit, { SimpleGit } from "simple-git";
 import * as path from "path";
+import parseDiff from "parse-diff"; // 导入 parse-diff
 
 export function activate(context: vscode.ExtensionContext) {
   const commentService = new CommentService(context);
@@ -70,20 +71,19 @@ export function activate(context: vscode.ExtensionContext) {
       // 获取相对路径
       const relativePath = path.relative(workspacePath, filePath);
 
-      // 获取当前 git blob hash
-      let blobHash = "";
       try {
-        // 确保文件已被提交
+        // 确保文件已被提交到 Git 仓库
         const isRepo = await git.checkIsRepo();
         if (!isRepo) {
           vscode.window.showErrorMessage("The file is not in a git repository");
           return;
         }
 
+        // 检查文件的 Git 状态
         const status = await git.status([relativePath]);
+
         if (
           status.not_added.includes(relativePath) ||
-          status.modified.includes(relativePath) ||
           status.created.includes(relativePath) ||
           status.deleted.includes(relativePath)
         ) {
@@ -93,27 +93,72 @@ export function activate(context: vscode.ExtensionContext) {
           return;
         }
 
-        blobHash = await git.revparse([`HEAD:${relativePath}`]);
-        blobHash = blobHash.trim();
+        // 如果文件有改动，进行进一步检查
+        if (
+          status.modified.includes(relativePath) ||
+          status.staged.includes(relativePath)
+        ) {
+          // 获取 git diff --unified=0 的输出
+          const diffOutput = await git.diff([
+            "--unified=0",
+            "HEAD",
+            "--",
+            relativePath,
+          ]);
+
+          // 使用 parse-diff 解析差异
+          const files = parseDiff(diffOutput);
+          let modifiedRanges: Array<{ start: number; end: number }> = [];
+
+          for (const file of files) {
+            for (const hunk of file.chunks) {
+              // hunk newStart 和 newLines 表示修改后的文件中的行数
+              const hunkStart = hunk.newStart;
+              const hunkLines = hunk.newLines;
+              const rangeStart = hunkStart;
+              const rangeEnd = hunkStart + hunkLines - 1;
+              modifiedRanges.push({ start: rangeStart, end: rangeEnd });
+            }
+          }
+
+          // 检查评论范围是否与修改范围有重叠
+          const isOverlapping = checkOverlap(
+            startLine,
+            endLine,
+            modifiedRanges
+          );
+
+          if (isOverlapping) {
+            vscode.window.showErrorMessage(
+              "Cannot add comment because the selected range overlaps with modified lines."
+            );
+            return;
+          }
+        }
+
+        // 获取当前 git blob hash（可选，如果后续需要使用）
+        const blobHash = await git.revparse([`HEAD:${relativePath}`]);
+
+        // 添加评论
+        commentService.addComment(
+          fileUri,
+          startLine,
+          endLine,
+          commentContent,
+          "MockUser"
+        );
+        vscode.window.showInformationMessage("The comment has been added");
+
+        // 刷新 CodeLens 和 Sidebar
+        codeLensProvider.refresh();
+        sidebarProvider.refresh();
       } catch (error) {
         vscode.window.showErrorMessage(
-          "Cannot get blob hash, please check your git repository"
+          "Cannot process the comment due to an unexpected error."
         );
+        console.error(error);
         return;
       }
-
-      commentService.addComment(
-        fileUri,
-        startLine,
-        endLine,
-        commentContent,
-        "MockUser"
-      );
-      vscode.window.showInformationMessage("The comment has been added");
-
-      // 刷新 CodeLens 和 Sidebar
-      codeLensProvider.refresh();
-      sidebarProvider.refresh();
     }
   );
 
@@ -187,3 +232,27 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {}
+
+/**
+ * 检查评论范围是否与任何修改范围重叠
+ * @param commentStart 评论起始行号
+ * @param commentEnd 评论结束行号
+ * @param modifiedRanges 修改的行范围数组
+ * @returns 如果有重叠返回 true，否则返回 false
+ */
+function checkOverlap(
+  commentStart: number,
+  commentEnd: number,
+  modifiedRanges: Array<{ start: number; end: number }>
+): boolean {
+  for (const range of modifiedRanges) {
+    if (
+      (commentStart >= range.start && commentStart <= range.end) ||
+      (commentEnd >= range.start && commentEnd <= range.end) ||
+      (range.start >= commentStart && range.start <= commentEnd)
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
